@@ -13,6 +13,9 @@ int crtVal = 0;       //前回の結果を記録しておく変数
 
 int count = 0;
 
+unsigned long now;
+unsigned long startTime = 0;
+
 // 初期設定 -----------------------------------------
 void setup() {
   Serial.begin(115200);
@@ -33,26 +36,31 @@ void setup() {
   
 }
 
+bool onFan = 0;
+
 // メイン -------------------------------------------
 void loop() {
+  now = millis();
+  Serial.println(now - startTime);
   sensVal = digitalRead(SENS_PIN); //センサー読み取り
 
-  Serial.println(sensVal);
-  if(crtVal != sensVal){
-    Serial.print("Sensor Value = ");
-    Serial.println(sensVal,BIN);
-    if(sensVal == 1){
+  if(sensVal == 1) onFan = 1;
+
+  if(now - startTime >= 5000){
+    if(onFan && crtVal != onFan){
       Serial.println("on!");
-      servo_on.write(90);      // 角度を指定してサーボ動作実行
+      servo_on.write(0);      // 角度を指定してサーボ動作実行
       delay(1000);
-      servo_on.write(0);
-    }else{
+      servo_on.write(180);
+    }else if(crtVal != onFan){
       Serial.println("停止");
-    servo_off.write(90);
-    delay(1000);
-    servo_off.write(0);
+      servo_off.write(0);
+      delay(1000);
+      servo_off.write(180);
     }
-    crtVal = sensVal;
+    crtVal = onFan;
+    startTime = now;
+    onFan = 0;
   }
-  delay(500); // 遅延時間
+  delay(10); // チャタリング防止
 }
